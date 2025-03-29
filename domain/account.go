@@ -18,6 +18,7 @@ type (
 
 	AccountRepositoryPort interface {
 		Save(account Account) (*Account, error)
+		GetAccountByCustomerID(customerID string) (*Account, error)
 	}
 )
 

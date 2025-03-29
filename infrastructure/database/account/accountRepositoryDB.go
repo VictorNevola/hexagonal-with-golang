@@ -1,6 +1,8 @@
 package account
 
 import (
+	"time"
+
 	"github.com/VictorNevola/hexagonal/domain"
 	"github.com/jmoiron/sqlx"
 )
@@ -8,6 +10,16 @@ import (
 type (
 	AccountRepositoryAdapter struct {
 		DB *sqlx.DB
+	}
+
+	AccountDTO struct {
+		ID            uint64  `db:"id"`
+		AccountNumber uint64  `db:"account_number"`
+		CustomerID    string  `db:"customer_id"`
+		OpeningDate   string  `db:"opening_date"`
+		AccountType   string  `db:"account_type"`
+		Amount        float64 `db:"amount"`
+		Status        string  `db:"status"`
 	}
 )
 
@@ -38,7 +50,7 @@ func (repo *AccountRepositoryAdapter) createTableIfNotExists() {
 
 func (r AccountRepositoryAdapter) Save(account domain.Account) (*domain.Account, error) {
 	query := `INSERT INTO accounts (account_number, customer_id, opening_date, account_type, amount, status)
-		VALUES (?, ?, ?, ?, ?)`
+		VALUES (?, ?, ?, ?, ?, ?)`
 
 	result, err := r.DB.Exec(query, account.AccountNumber, account.CustomerID, account.OpeningDate, account.AccountType, account.Amount, account.Status)
 	if err != nil {
@@ -51,6 +63,30 @@ func (r AccountRepositoryAdapter) Save(account domain.Account) (*domain.Account,
 	}
 
 	account.ID = uint64(id)
+
+	return &account, nil
+}
+
+func (r AccountRepositoryAdapter) GetAccountByCustomerID(customerID string) (*domain.Account, error) {
+	query := `SELECT * FROM accounts WHERE customer_id = ?`
+
+	var accountDTO AccountDTO
+	err := r.DB.Get(&accountDTO, query, customerID)
+	if err != nil {
+		return nil, err
+	}
+
+	openingDate, _ := time.Parse("2006-01-02 15:04:05", accountDTO.OpeningDate)
+
+	account := domain.Account{
+		ID:            accountDTO.ID,
+		AccountNumber: accountDTO.AccountNumber,
+		CustomerID:    accountDTO.CustomerID,
+		OpeningDate:   openingDate,
+		AccountType:   accountDTO.AccountType,
+		Amount:        accountDTO.Amount,
+		Status:        accountDTO.Status,
+	}
 
 	return &account, nil
 }

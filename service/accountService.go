@@ -47,6 +47,15 @@ func (s AcountServiceAdapter) NewAccount(account AccountCreateDTO) (AccountRespo
 		return AccountResponseDTO{}, ErrorAccountCannotBeOpened
 	}
 
+	existingAccount, err := s.repo.GetAccountByCustomerID(newAccount.CustomerID)
+	if err != nil {
+		return AccountResponseDTO{}, err
+	}
+
+	if existingAccount != nil {
+		return AccountResponseDTO{}, ErrorAccountAlreadyExists
+	}
+
 	newAccount.GenerateAccountNumber()
 
 	createdAccount, err := s.repo.Save(newAccount)
